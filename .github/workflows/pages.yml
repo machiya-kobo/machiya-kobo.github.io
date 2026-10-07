@@ -1,0 +1,39 @@
+# Publishes the Machiya marketing page (machiya-kobo/machiya, site/) at https://machiya-kobo.github.io/.
+# The page's source stays in the machiya repo; this repo only deploys it. Runs every six hours and on demand
+# (Actions -> pages -> Run workflow) after a change to site/.
+name: pages
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [site]
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: machiya-kobo/machiya
+          sparse-checkout: site
+          persist-credentials: false
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
